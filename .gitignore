@@ -2,3 +2,4 @@
 /venv
 /ch.zip
 __pycache__
+.DS_Store
