@@ -1,23 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Shows ALL points from the BernSolarPanelBuildings CSV as Folium markers
-    # NOTE: For very large datasets, the HTML can become heavy; here we follow the request "all records".
-    valid_coords = df[df["lon"].notna() & df["lat"].notna()]
-    print(f"[INFO] Disegnando {len(valid_coords)} punti validi su {len(df)} totali")
-    
-    for lo, la in zip(valid_coords["lon"].values, valid_coords["lat"].values):
-        folium.CircleMarker(
-            location=(la, lo),
-            radius=args.radius,
-            color=args.color,
-            weight=0,  # thin border (0=no border)
-            fill=True,
-            fill_color=args.fill,
-            fill_opacity=args.alpha,
-        ).add_to(fg)r Folium.
-- Input: CSV con coordinate LV95 (default colonne: _x, _y)
-- Output: HTML interattivo con layer OSM/Esri e LayerControl
+Shows ALL points from the BernSolarPanelBuildings CSV as Folium markers with detailed popups.
+Uses an iterative approach similar to GeoPandas for creating informative popups.
+- Input: CSV with LV95 coordinates (default columns: _x, _y)
+- Output: Interactive HTML with OSM/Esri layers and LayerControl
 Dep: pip install pandas pyproj folium
 """
 
@@ -50,19 +37,19 @@ def pick_xy(cols):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", default="dataset/BernSolarPanelBuildings.csv",
-                    help="Percorso al CSV (default: dataset/BernSolarPanelBuildings.csv)")
-    ap.add_argument("--x", default="", help="Nome colonna X (LV95 easting)")
-    ap.add_argument("--y", default="", help="Nome colonna Y (LV95 northing)")
-    ap.add_argument("--out", default="bern_map.html",
-                    help="File HTML in output")
+                    help="Path to CSV (default: dataset/BernSolarPanelBuildings.csv)")
+    ap.add_argument("--x", default="", help="Name of X column (LV95 easting)")
+    ap.add_argument("--y", default="", help="Name of Y column (LV95 northing)")
+    ap.add_argument("--out", default="maps/bern_map.html",
+                    help="Output HTML file")
     ap.add_argument("--limit", type=int, default=0,
-                    help="Usa solo le prime N righe (0=tutte)")
-    ap.add_argument("--radius", type=float, default=2.0,
-                    help="Raggio marker (px, piccolo=2)")
+                    help="Use only the first N rows (0=all)")
+    ap.add_argument("--radius", type=float, default=4.0,
+                    help="Marker radius (px, small=2)")
     ap.add_argument("--alpha", type=float, default=0.8,
-                    help="Opacità marker [0..1]")
+                    help="Marker opacity [0..1]")
     ap.add_argument("--color", default="#e41a1c",
-                    help="Colore bordo (hex o nome)")
+                    help="Border color (hex or name)")
     ap.add_argument("--fill", default="#e41a1c", help="Fill color")
     args = ap.parse_args()
 
@@ -70,7 +57,7 @@ def main():
     try:
         head = pd.read_csv(args.csv, nrows=0)
     except Exception as e:
-        print(f"[ERRORE] Impossibile leggere {args.csv}: {e}", file=sys.stderr)
+        print(f"[ERROR] Unable to read {args.csv}: {e}", file=sys.stderr)
         sys.exit(1)
 
     cols = list(head.columns)
@@ -80,23 +67,23 @@ def main():
         x_col, y_col = pick_xy(cols)
 
     if not x_col or not y_col:
-        print("[ERRORE] Colonne coordinate non trovate.", file=sys.stderr)
-        print(f"Colonne disponibili: {cols}", file=sys.stderr)
-        print("Passa esplicitamente: --x _x --y _y", file=sys.stderr)
+        print("[ERROR] Coordinate columns not found.", file=sys.stderr)
+        print(f"Available columns: {cols}", file=sys.stderr)
+        print("Pass explicitly: --x _x --y _y", file=sys.stderr)
         sys.exit(1)
 
-    usecols = [x_col, y_col]
-    df = pd.read_csv(args.csv, usecols=usecols)
+    # Read all columns to have more data for popups
+    df = pd.read_csv(args.csv)
     if args.limit > 0:
         df = df.head(args.limit).copy()
 
     if df.empty:
-        print("[INFO] Nessuna riga da disegnare.", file=sys.stderr)
+        print("[INFO] No rows to draw.", file=sys.stderr)
         sys.exit(0)
 
     # Remove rows with missing or invalid coordinates
     df = df.dropna(subset=[x_col, y_col])
-    print(f"[INFO] Righe valide dopo rimozione NaN: {len(df)}")
+    print(f"[INFO] Valid rows after removing NaN: {len(df)}")
 
     # Transform LV95 (EPSG:2056) -> WGS84 (EPSG:4326)
     tr = Transformer.from_crs(2056, 4326, always_xy=True)
@@ -106,11 +93,11 @@ def main():
 
     # Check for valid coordinates
     df = df[df["lon"].notna() & df["lat"].notna()]
-    print(f"[INFO] Righe valide dopo trasformazione: {len(df)}")
+    print(f"[INFO] Valid rows after transformation: {len(df)}")
 
     if df.empty:
         print(
-            "[ERRORE] Nessuna coordinata valida trovata dopo la trasformazione.", file=sys.stderr)
+            "[ERROR] No valid coordinates found after transformation.", file=sys.stderr)
         sys.exit(1)
 
     # Center map on average of points
@@ -135,17 +122,35 @@ def main():
     fg = folium.FeatureGroup(name="Bern Solar Panel Buildings", show=True)
     m.add_child(fg)
 
-    # Adds ALL markers as small CircleMarkers
-    # NOTE: For very large datasets, the HTML can become heavy; here we follow the request "all records".
-    for lo, la in zip(df["lon"].values, df["lat"].values):
+    # Iterazione su righe DataFrame per aggiungere marker con popup
+    # Following the requested pattern similar to GeoPandas approach
+    for _, row in df.iterrows():
+        # Create informative popup with building data
+        popup_html = f"""
+        <div style='background-color:white; color:black; padding:12px; border-radius:8px; font-family:sans-serif; font-size:13px; max-width:300px;'>
+            <b>🏠 Solar Panel Building</b><br><br>
+            <b>Address:</b> {row.get('Address', 'N/A')}<br>
+            <b>Municipality:</b> {row.get('Municipality', 'N/A')}<br>
+            <b>PostCode:</b> {row.get('PostCode', 'N/A')}<br>
+            <b>Canton:</b> {row.get('Canton', 'N/A')}<br><br>
+            <b>⚡ Power Info:</b><br>
+            <b>Total Power:</b> {row.get('TotalPower', 'N/A')} kW<br>
+            <b>Installation:</b> {row.get('BeginningOfOperation', 'N/A')}<br><br>
+            <b>📍 Coordinates:</b><br>
+            Lat: {row['lat']:.6f}<br>
+            Lon: {row['lon']:.6f}
+        </div>
+        """
+
         folium.CircleMarker(
-            location=(la, lo),
+            location=[row['lat'], row['lon']],
+            popup=folium.Popup(popup_html, parse_html=True, max_width=350),
             radius=args.radius,
-            color=args.color,
-            weight=0,  # bordo sottile (0=nessun bordo)
+            color='red',
             fill=True,
-            fill_color=args.fill,
-            fill_opacity=args.alpha,
+            fillColor='red',
+            fillOpacity=args.alpha,
+            weight=2
         ).add_to(fg)
 
     folium.LayerControl(collapsed=False).add_to(m)
@@ -153,7 +158,7 @@ def main():
     # Save
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     m.save(args.out)
-    print(f"[OK] Mappa salvata in {args.out}")
+    print(f"[OK] Map saved in {args.out}")
 
 
 if __name__ == "__main__":
