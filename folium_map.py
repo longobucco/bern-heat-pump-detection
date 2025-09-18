@@ -144,7 +144,7 @@ def main():
 
         folium.CircleMarker(
             location=[row['lat'], row['lon']],
-            popup=folium.Popup(popup_html, parse_html=True, max_width=350),
+            popup=folium.Popup(html=popup_html, max_width=350),
             radius=args.radius,
             color='red',
             fill=True,
