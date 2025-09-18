@@ -1,7 +1,9 @@
 import csv
 
 input_file = 'electricity/ElectricityProductionPlant.csv'
-output_file = 'electricity/ElectricityProductionPlant_filtered.csv'
+output_file = 'dataset/BernSolarPanelBuildings.csv'
+
+# This script filters the CSV file for rows where 'Canton' is 'BE' and 'SubCategory' is 'subcat_2' (solar panels)
 
 with open(input_file, newline='', encoding='utf-8') as csvfile:
     reader = csv.DictReader(csvfile)
