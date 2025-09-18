@@ -1,4 +1,4 @@
-# Bern Heat Pump Detection & Solar Panel Analysis
+# Bern Solar Panel Analysis
 
 A comprehensive project for analyzing buildings and electricity production plants in the canton of Bern, Switzerland. The project includes data filtering capabilities, interactive mapping, and geospatial visualization features.
 
