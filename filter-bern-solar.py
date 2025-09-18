@@ -3,12 +3,16 @@ import csv
 input_file = 'electricity/ElectricityProductionPlant.csv'
 output_file = 'dataset/BernSolarPanelBuildings.csv'
 
-# This script filters the CSV file for rows where 'Canton' is 'BE' and 'SubCategory' is 'subcat_2' (solar panels)
+
+# Questo script filtra il file CSV per le righe dove 'Canton' è 'BE' e 'SubCategory' è 'subcat_2'
+
 
 with open(input_file, newline='', encoding='utf-8') as csvfile:
     reader = csv.DictReader(csvfile)
-    filtered_rows = [row for row in reader if row.get(
-        'Canton') == 'BE' and row.get('SubCategory') == 'subcat_2']
+    filtered_rows = [
+        row for row in reader
+        if row.get('Canton') == 'BE' and row.get('SubCategory') == 'subcat_2'
+    ]
 
 with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
     if filtered_rows:

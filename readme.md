@@ -12,19 +12,19 @@ A comprehensive project for analyzing buildings and electricity production plant
 ### 🗺️ Interactive Mapping
 
 - **`folium_map.py`**: Creates interactive HTML maps using Folium with:
-  - Support for Swiss LV95 coordinates (EPSG:2056)
-  - Automatic conversion to WGS84 coordinates for web visualization
-  - Detailed informative popups for each point
-  - Multiple layers (OpenStreetMap, Esri Satellite)
-  - Interactive layer control
+- Support for Swiss LV95 coordinates (EPSG:2056)
+- Automatic conversion to WGS84 coordinates for web visualization
+- Detailed informative popups for each point
+- Multiple layers (OpenStreetMap, Esri Satellite)
+- Interactive layer control
 
 ### 📊 Geospatial Visualization
 
 - **`plotmap.py`**: Generates static visualizations on satellite basemaps with:
-  - Support for scatter and hexbin plots
-  - Integration with swisstopo data for cantonal boundaries
-  - High-resolution satellite basemap
-  - PNG format export
+- Support for scatter and hexbin plots
+- Integration with swisstopo data for cantonal boundaries
+- High-resolution satellite basemap
+- PNG format export
 
 ## Data Structure
 
