@@ -3,10 +3,10 @@
 Plot Swiss CH1903+ / LV95 (EPSG:2056) points on a satellite basemap.
 
 Examples:
-  # Hexbin su satellite (dataset con colonne _x/_y)
+  # Hexbin on satellite (dataset with columns _x/_y)
   python plotmap.py --csv dataset/BernSolarPanelBuildings.csv --x _x --y _y --out bern_hexbin.png --kind hexbin --gridsize 120
 
-  # Scatter su satellite (dataset con east_lv95/north_lv95)
+  # Scatter on satellite (dataset with east_lv95/north_lv95)
   python plotmap.py --csv bern_buildings.csv --x east_lv95 --y north_lv95 --out bern_scatter.png --kind scatter --s 0.5
 """
 
@@ -31,12 +31,11 @@ CANDIDATES = [
 
 
 def load_canton_boundary(canton_code="BE"):
-    """Scarica confine cantonale da swisstopo WFS e ritorna GeoDataFrame in EPSG:3857"""
+    """Download canton boundary from swisstopo WFS and return GeoDataFrame in EPSG:3857"""
     url = "https://wfs.geo.admin.ch/?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities"
     wfs = WebFeatureService(url=url, version="2.0.0")
     layer = "ch.swisstopo.swissboundaries3d-kanton-flaeche.fill"
-  
-  
+
     response = wfs.getfeature(typename=layer, outputFormat="application/json")
     gdf = gpd.read_file(response)
     gdf = gdf[gdf["KANTONSABK"] == canton_code]
@@ -91,7 +90,7 @@ def main():
     if args.sample and args.sample > 0:
         df = df.head(args.sample)
 
-    # GeoDataFrame in LV95 -> 3857 per basemap web
+    # GeoDataFrame in LV95 -> 3857 for web basemap
     gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(
         df[x_col], df[y_col]), crs="EPSG:2056")
     gdf3857 = gdf.to_crs(epsg=3857)
@@ -103,9 +102,9 @@ def main():
     else:
         hb = ax.hexbin(gdf3857.geometry.x, gdf3857.geometry.y,
                        gridsize=args.gridsize)
-        hb.set_alpha(args.alpha)  # default colours
+        hb.set_alpha(args.alpha)  # default colors
 
-    # limiti + padding
+    # limits + padding
     x_min, x_max = gdf3857.geometry.x.min(), gdf3857.geometry.x.max()
     y_min, y_max = gdf3857.geometry.y.min(), gdf3857.geometry.y.max()
     pad_x = (x_max - x_min) * 0.02
@@ -113,18 +112,17 @@ def main():
     ax.set_xlim(x_min - pad_x, x_max + pad_x)
     ax.set_ylim(y_min - pad_y, y_max + pad_y)
 
-    # basemap satellite
+    # satellite basemap
     ctx.add_basemap(ax, source=ctx.providers.Esri.WorldImagery,
                     crs=gdf3857.crs.to_string())
 
-    # not working - Bern canton boundary
+    # attempt to plot Bern canton boundary
     try:
         canton_gdf = load_canton_boundary("BE")
         canton_gdf.plot(ax=ax, facecolor="none",
                         edgecolor="red", linewidth=2, zorder=10)
     except Exception as e:
-        print(
-            f"[WARN] Impossibile caricare confine cantone: {e}", file=sys.stderr)
+        print(f"[WARN] Could not load canton boundary: {e}", file=sys.stderr)
 
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlabel(f"{x_col} (LV95, m)")
