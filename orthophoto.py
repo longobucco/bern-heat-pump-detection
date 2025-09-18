@@ -58,17 +58,17 @@ def fetch_patch(x, y, r, size=256, timeout=30):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", required=True,
-                    help="Input CSV with EGID,east_lv95,north_lv95,has_heat_pump,...")
+    ap.add_argument("--csv", default="data/bern_buildings.tsv",
+                    help="Input CSV/TSV with EGID,east_lv95,north_lv95,has_heat_pump,...")
     ap.add_argument("--out", default="joined.csv",
                     help="Output CSV with img_path")
     ap.add_argument("--out_dir", default="patches",
                     help="Directory where images are saved")
     ap.add_argument("--buffer_m", type=float, default=40.0,
                     help="Half-size of patch (meters). 40 => ~80m window")
-    ap.add_argument("--size_px", type=int, default=256,
+    ap.add_argument("--size_px", type=int, default=125,
                     help="Patch size (pixels)")
-    ap.add_argument("--limit", type=int, default=0,
+    ap.add_argument("--limit", type=int, default=1,
                     help="Process only first N rows (0 = all)")
     ap.add_argument("--delay", type=float, default=0.05,
                     help="Seconds between requests (politeness)")
@@ -78,9 +78,18 @@ def main():
 
     os.makedirs(args.out_dir, exist_ok=True)
 
-    df = pd.read_csv(args.csv)
+    # Leggi il file TSV (separato da tab)
+    df = pd.read_csv(args.csv, sep='\t')
     if args.limit > 0:
         df = df.head(args.limit).copy()
+
+    print(f"[INFO] Elaborando {len(df)} edificio(i) dal dataset {args.csv}")
+    if len(df) > 0:
+        first_row = df.iloc[0]
+        print(
+            f"[INFO] Primo edificio - EGID: {first_row['EGID']}, Coordinate: ({first_row['east_lv95']}, {first_row['north_lv95']})")
+        print(
+            f"[INFO] Dimensione immagine: {args.size_px}x{args.size_px} pixel")
 
     img_paths = []
     ok = 0
