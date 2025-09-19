@@ -1,178 +1,233 @@
 # Bern Solar Panel Detection
 
-Un progetto di computer vision per il rilevamento automatico di pannelli solari attraverso l'analisi di ortofoto aeree nel cantone di Berna, Svizzera. Il sistema utilizza dati open data di swisstopo e opendata.swiss per creare un dataset bilanciato di immagini aeree ad alta risoluzione per l'addestramento di modelli di machine learning.
+A computer vision project for automatic solar panel detection through analysis of aerial orthophotos in the Canton of Bern, Switzerland. The system uses open data from swisstopo and opendata.swiss to create a balanced dataset of high-resolution aerial images for machine learning model training.
 
-## Problema
+## Problem
 
-Identificare automaticamente gli edifici dotati di pannelli solari attraverso l'analisi di fotografie aeree ad alta risoluzione (ortofoto).
+Automatically identify buildings equipped with solar panels through analysis of high-resolution aerial photographs (orthophotos).
 
-## Processo di Sviluppo
+## Development Process
 
-1. **Estrazione Dati**: Ottenimento dei dati da opendata.swiss sui pannelli solari e edifici nel cantone di Berna
-2. **Estrazione Coordinate**: Matching spaziale tra edifici con pannelli solari e coordinate geografiche
-3. **Acquisizione Ortofoto**: Download automatico di ortofoto ad alta risoluzione da swisstopo WMS
-4. **Creazione Dataset**: Costruzione di un dataset bilanciato con rapporto ~1:3 tra esempi positivi e negativi
+1. **Data Extraction**: Obtaining data from opendata.swiss on solar panels and buildings in the Canton of Bern
+2. **Coordinate Extraction**: Spatial matching between buildings with solar panels and geographic coordinates
+3. **Orthophoto Acquisition**: Automatic download of high-resolution orthophotos from swisstopo WMS
+4. **Dataset Creation**: Construction of a balanced dataset with ~1:3 ratio between positive and negative examples
 
-## Pipeline del Progetto
+## Project Pipeline
 
-### 🏗️ Preprocessing dei Dati
+### 🏗️ Data Preprocessing
 
-- **`sample.py`**: Campionamento casuale di 24.000 edifici dal dataset completo del cantone di Berna
-- **`match.py`**: Matching spaziale tra edifici con pannelli solari e coordinate geografiche per identificare esempi positivi
-- **`orthophoto.py`**: Download di ortofoto per edifici con pannelli solari (esempi positivi)
-- **`original-orthophoto.py`**: Download di ortofoto per edifici casuali (esempi negativi/non etichettati)
+- **`sample.py`**: Random sampling of 24,000 buildings from the complete Canton of Bern dataset
+- **`match.py`**: Spatial matching between buildings with solar panels and geographic coordinates to identify positive examples
+- **`orthophoto.py`**: Download orthophotos for buildings with solar panels (positive examples)
+- **`original-orthophoto.py`**: Download orthophotos for random buildings (negative/unlabeled examples)
 
-### 🖼️ Acquisizione Immagini
+### 🖼️ Image Acquisition
 
-- **Risoluzione**: Immagini disponibili in due formati (125x125px e 256x256px)
-- **Risoluzione spaziale**: 20 cm per pixel
-- **Fonte**: Servizio WMS swisstopo (ch.swisstopo.swissimage-product)
-- **Sistema di coordinate**: LV95 (EPSG:2056)
+- **Resolution**: Images available in two formats (125x125px and 256x256px)
+- **Spatial resolution**: 20 cm per pixel
+- **Source**: swisstopo WMS service (ch.swisstopo.swissimage-product)
+- **Coordinate system**: LV95 (EPSG:2056)
 
-### 🗺️ Visualizzazione e Analisi
+### 🗺️ Visualization and Analysis
 
-- **`folium_map.py`**: Creazione di mappe interattive HTML con:
-  - Supporto per coordinate Swiss LV95 (EPSG:2056)
-  - Conversione automatica a WGS84 per visualizzazione web
-  - Popup informativi dettagliati
-  - Layer multipli (OpenStreetMap, Esri Satellite)
+- **`folium_map.py`**: Creation of interactive HTML maps with:
 
-- **`plotmap.py`**: Visualizzazioni statiche su basemap satellitari:
-  - Plot scatter e hexbin
-  - Integrazione con dati swisstopo per confini cantonali
-  - Esportazione in formato PNG ad alta risoluzione
+  - Support for Swiss LV95 coordinates (EPSG:2056)
+  - Automatic conversion to WGS84 for web visualization
+  - Detailed informative popups
+  - Multiple layers (OpenStreetMap, Esri Satellite)
 
-## Struttura del Dataset
+- **`plotmap.py`**: Static visualizations on satellite basemaps:
+  - Scatter and hexbin plots
+  - Integration with swisstopo data for cantonal boundaries
+  - Export in high-resolution PNG format
 
-### Dataset Immagini
+## Dataset Structure
 
-Il progetto genera quattro directory di immagini per il training di modelli di computer vision:
+### Image Dataset
 
-#### Esempi Positivi (Edifici con Pannelli Solari)
-- **`true-orthophoto-125px/`**: 8.346 immagini 125x125px di edifici con pannelli solari
-- **`true-orthophoto-256px/`**: 8.346 immagini 256x256px di edifici con pannelli solari
+The project generates four image directories for computer vision model training:
 
-#### Esempi Negativi/Non Etichettati
-- **`unlabeled-orthophoto-125px/`**: 23.995 immagini 125x125px di edifici casuali
-- **`unlabeled-orthophoto-256px/`**: 19.583 immagini 256x256px di edifici casuali
+#### Positive Examples (Buildings with Solar Panels)
 
-**Rapporto del Dataset**: ~1:3 (positivi:negativi), bilanciamento ottimale per training di modelli di classificazione
+- **`true-orthophoto-125px/`**: 8,346 images 125x125px of buildings with solar panels
+- **`true-orthophoto-256px/`**: 8,346 images 256x256px of buildings with solar panels
 
-### Dataset CSV
+#### Negative/Unlabeled Examples
 
-#### Directory `dataset/`
+- **`unlabeled-orthophoto-125px/`**: 23,995 images 125x125px of random buildings
+- **`unlabeled-orthophoto-256px/`**: 19,583 images 256x256px of random buildings
 
-- **`BernSolarPanelBuildings.csv`**: 37.099 edifici con pannelli solari nel cantone di Berna
-  - Include coordinate LV95, indirizzo, potenza installata, data di messa in funzione
-- **`buildings_BE.csv`**: 477.847 edifici totali nel cantone di Berna
-- **`building_sample_BE.csv`**: 24.000 edifici campionati casualmente per esempi negativi
-- **`buildings_BE_matches_xy.csv`**: 8.347 coordinate di edifici con pannelli solari estratte per il download delle ortofoto
+**Dataset Ratio**: ~1:3 (positive:negative), optimal balancing for classification model training
 
-## Caratteristiche Tecniche
+### CSV Dataset
 
-### Coordinate e Proiezioni
-- **Input**: Swiss LV95 (EPSG:2056) - sistema di coordinate ufficiale svizzero
-- **Output web**: WGS84 (EPSG:4326) - conversione automatica per visualizzazione
-- **Basemap**: Web Mercator (EPSG:3857) - per integrazione con mappe satellitari
+#### `dataset/` Directory
 
-### Parametri Ortofoto
-- **Risoluzione spaziale**: 20 cm/pixel
-- **Dimensioni immagine**: 125x125px (25m x 25m) o 256x256px (51.2m x 51.2m)
-- **Formato**: PNG ad alta qualità
-- **Copertura**: Area di 12.5m di raggio dal centroide dell'edificio
+- **`BernSolarPanelBuildings.csv`**: 37,099 buildings with solar panels in the Canton of Bern
+  - Includes LV95 coordinates, address, installed power, commissioning date
+- **`buildings_BE.csv`**: 477,847 total buildings in the Canton of Bern
+- **`building_sample_BE.csv`**: 24,000 randomly sampled buildings for negative examples
+- **`buildings_BE_matches_xy.csv`**: 8,347 coordinates of buildings with solar panels extracted for orthophoto download
 
-### API e Servizi
-- **Fonte dati**: opendata.swiss per dati energia e edifici
-- **Ortofoto**: swisstopo WMS (ch.swisstopo.swissimage-product)
-- **Confini amministrativi**: swisstopo WFS per confini cantonali
+## Technical Characteristics
 
-## Utilizzo
+### Coordinates and Projections
 
-### Preparazione del Dataset
+- **Input**: Swiss LV95 (EPSG:2056) - official Swiss coordinate system
+- **Web output**: WGS84 (EPSG:4326) - automatic conversion for visualization
+- **Basemap**: Web Mercator (EPSG:3857) - for integration with satellite maps
+
+### Orthophoto Parameters
+
+- **Spatial resolution**: 20 cm/pixel
+- **Image dimensions**: 125x125px (25m x 25m) or 256x256px (51.2m x 51.2m)
+- **Format**: High-quality PNG
+- **Coverage**: 12.5m radius area from building centroid
+
+### APIs and Services
+
+- **Data source**: opendata.swiss for energy and building data
+- **Orthophotos**: swisstopo WMS (ch.swisstopo.swissimage-product)
+- **Administrative boundaries**: swisstopo WFS for cantonal boundaries
+
+## Usage
+
+### YOLO Model Training
+
+The project uses YOLO (You Only Look Once) for automatic solar panel detection. The dataset is already prepared and organized in the appropriate directories.
 
 ```bash
-# 1. Campionamento di edifici casuali
-python sample.py
+# Make sure dependencies are installed
+pip install -r requirements.txt
 
-# 2. Estrazione coordinate edifici con pannelli solari
-python match.py
-
-# 3. Download ortofoto edifici con pannelli (esempi positivi)
-python orthophoto.py
-
-# 4. Download ortofoto edifici casuali (esempi negativi)
-python original-orthophoto.py
+# Start YOLO model training
+python yolo.py
 ```
 
-### Generazione delle Visualizzazioni
+The `yolo.py` file performs training over 5 epochs using:
+
+- **Base model**: Pre-trained YOLOv8n (nano)
+- **Training dataset**: 256x256px images of buildings with solar panels
+- **Validation dataset**: 256x256px images of random buildings
+- **Configuration**: Defined in `data.yaml`
+
+### Training Configuration
+
+The `data.yaml` file contains the dataset configuration:
+
+```yaml
+train: /path/to/true-orthophoto-256px # Positive examples
+val: /path/to/unlabeled-orthophoto-256px # Negative examples
+nc: 2 # Number of classes
+names: ["solar-panel", "no-solar-panel"] # Class names
+```
+
+### Training Results
+
+Training results are automatically saved in:
+
+- **`runs/detect/train/`**: Metrics, charts and model weights
+- **`runs/detect/train/weights/best.pt`**: Best trained model
+- **`runs/detect/train/weights/last.pt`**: Last checkpoint
+
+### Visualization Generation
 
 ```bash
-# Mappa interattiva di tutti gli edifici con pannelli solari
+# Interactive map of all buildings with solar panels
 python folium_map.py --csv dataset/BernSolarPanelBuildings.csv --out maps/solar_buildings.html
 
-# Visualizzazione hexbin della densità di pannelli solari
+# Hexbin visualization of solar panel density
 python plotmap.py --csv dataset/BernSolarPanelBuildings.csv --x _x --y _y --out images/solar_hexbin.png --kind hexbin --gridsize 120
 
-# Scatter plot di tutti gli edifici
+# Scatter plot of all buildings
 python plotmap.py --csv dataset/buildings_BE.csv --x GKODE --y GKODN --out images/buildings_scatter.png --kind scatter --s 0.5
 ```
 
-## Requisiti
+## Requirements
+
+The project requires few essential dependencies for YOLO training:
 
 ```bash
-pip install pandas pyproj folium geopandas matplotlib contextily owslib requests
+pip install -r requirements.txt
 ```
 
-## Applicazioni Potenziali
+**Main dependencies:**
 
-### Machine Learning
-- **Classificazione binaria**: Rilevamento presenza/assenza pannelli solari
-- **Object detection**: Localizzazione precisa dei pannelli nelle immagini
-- **Semantic segmentation**: Segmentazione pixel-level dei pannelli solari
-- **Transfer learning**: Fine-tuning di modelli pre-addestrati (ResNet, EfficientNet, etc.)
+- `ultralytics>=8.0.0` - YOLO framework for object detection
+- `pandas>=2.0.0` - CSV data manipulation
+- `numpy>=1.24.0` - Basic numerical operations
+- `jupyter>=1.0.0` - Optional, for interactive experimentation
 
-### Analisi Geospaziale
-- **Mapping**: Identificazione automatica di nuove installazioni solari
-- **Trend analysis**: Monitoraggio dell'espansione del fotovoltaico nel tempo
-- **Urban planning**: Supporto alla pianificazione energetica territoriale
-- **Policy making**: Analisi dell'efficacia delle politiche di incentivazione
+**Notes:**
+
+- Ultralytics automatically installs PyTorch, torchvision and other necessary dependencies
+- Geospatial libraries are no longer needed for training only
+- For GPU support, make sure you have CUDA installed and compatible
+
+## Potential Applications
+
+### Object Detection with YOLO
+
+- **Automatic detection**: Identification and precise localization of solar panels in orthophotos
+- **Real-time inference**: Ability to process new images in real-time for continuous mapping
+- **Bounding box detection**: Precise panel coordinates for quantitative analysis
+- **Confidence scoring**: Model certainty assessment for each detection
+- **Multi-scale detection**: Ability to detect panels of different sizes in the same image
+
+### Deployment and Inference
+
+- **Batch processing**: Automatic processing of large orthophoto datasets
+- **Web API**: Integration into web systems for image upload and analysis
+- **Mobile deployment**: Optimization for mobile devices with YOLO nano
+- **Edge computing**: Deployment on IoT devices for distributed analysis
+- **Cloud integration**: Scalability on cloud infrastructures for massive processing
+
+### Geospatial Analysis
+
+- **Mapping**: Automatic identification of new solar installations
+- **Trend analysis**: Monitoring photovoltaic expansion over time
+- **Urban planning**: Support for territorial energy planning
+- **Policy making**: Analysis of incentive policy effectiveness
 
 ### Computer Vision Research
-- **Benchmark dataset**: Dataset standardizzato per confronto di algoritmi
-- **Domain adaptation**: Trasferimento a altre regioni geografiche
-- **Multi-temporal analysis**: Rilevamento di cambiamenti nel tempo
-- **Multi-scale analysis**: Confronto prestazioni a diverse risoluzioni
 
-## Note Tecniche
+- **Benchmark dataset**: Standardized dataset for algorithm comparison
+- **Domain adaptation**: Transfer to other geographical regions
+- **Multi-temporal analysis**: Detection of changes over time
+- **Multi-scale analysis**: Performance comparison at different resolutions
 
-- **Gestione memoria**: Download progressivo per dataset di grandi dimensioni
-- **Error handling**: Gestione automatica di fallimenti di download WMS
-- **Coordinate handling**: Supporto automatico per diversi formati di colonne coordinate
-- **Scalabilità**: Pipeline ottimizzata per dataset di centinaia di migliaia di edifici
-- **Qualità**: Controllo qualità automatico delle immagini scaricate
-- **Reproducibilità**: Seed fisso per campionamento deterministico
+## Technical Notes
 
-## Struttura Directory
+- **Memory management**: Progressive download for large datasets
+- **Error handling**: Automatic handling of WMS download failures
+- **Coordinate handling**: Automatic support for different coordinate column formats
+- **Scalability**: Pipeline optimized for datasets of hundreds of thousands of buildings
+- **Quality**: Automatic quality control of downloaded images
+- **Reproducibility**: Fixed seed for deterministic sampling
+
+## Directory Structure
 
 ```
 bern-solar-panel-detection/
-├── dataset/                          # Dataset CSV processati
-│   ├── BernSolarPanelBuildings.csv   # 37.099 edifici con pannelli
-│   ├── buildings_BE.csv              # 477.847 edifici totali BE
-│   ├── building_sample_BE.csv        # 24.000 edifici campionati
-│   └── buildings_BE_matches_xy.csv   # 8.347 coordinate estratte
-├── true-orthophoto-125px/            # 8.346 immagini positive 125px
-├── true-orthophoto-256px/            # 8.346 immagini positive 256px
-├── unlabeled-orthophoto-125px/       # 23.995 immagini negative 125px
-├── unlabeled-orthophoto-256px/       # 19.583 immagini negative 256px
-├── maps/                             # Mappe HTML interattive
-├── images/                           # Visualizzazioni statiche PNG
-└── *.py                             # Script di preprocessing e visualizzazione
+├── dataset/                          # Processed CSV datasets
+│   ├── BernSolarPanelBuildings.csv   # 37,099 buildings with panels
+│   ├── buildings_BE.csv              # 477,847 total BE buildings
+│   ├── building_sample_BE.csv        # 24,000 sampled buildings
+│   └── buildings_BE_matches_xy.csv   # 8,347 extracted coordinates
+├── true-orthophoto-125px/            # 8,346 positive images 125px
+├── true-orthophoto-256px/            # 8,346 positive images 256px
+├── unlabeled-orthophoto-125px/       # 23,995 negative images 125px
+├── unlabeled-orthophoto-256px/       # 19,583 negative images 256px
+├── maps/                             # Interactive HTML maps
+├── images/                           # Static PNG visualizations
+└── *.py                             # Preprocessing and visualization scripts
 ```
 
-## Licenza e Attribuzioni
+## License and Attributions
 
-- **Dati**: opendata.swiss (Open Government Data)
-- **Ortofoto**: © swisstopo
-- **Confini amministrativi**: © swisstopo
-- **Codice**: Sviluppato per ricerca accademica in computer vision e energy analytics
+- **Data**: opendata.swiss (Open Government Data)
+- **Orthophotos**: © swisstopo
+- **Administrative boundaries**: © swisstopo
+- **Code**: Developed for academic research in computer vision and energy analytics
