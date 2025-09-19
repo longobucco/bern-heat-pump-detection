@@ -5,12 +5,12 @@ import requests
 from urllib.parse import urlencode
 
 # Input dataset: columns "GKODE","GKODN" in LV95 / EPSG:2056
-CSV_PATH = "dataset/buildings_BE_matches_xy.csv"
-OUT_DIR = "true-orthophoto-125px"
+CSV_PATH = "dataset/building_sample_BE.csv"
+OUT_DIR = "unlabeled-orthophoto-256px"
 
-WIDTH = HEIGHT = 125
+WIDTH = HEIGHT = 256
 # 20 cm per pixel (double the area compared to 0.10 m/px)
-M_PER_PX = 0.20
+M_PER_PX = 0.075
 LAYER = "ch.swisstopo.swissimage-product"  # High-res orthophoto
 WMS_URL = "https://wms.geo.admin.ch/"
 

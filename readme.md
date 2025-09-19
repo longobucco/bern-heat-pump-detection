@@ -1,285 +1,178 @@
-# Bern Solar Panel Analysis
+# Bern Solar Panel Detection
 
-A comprehensive project for analyzing buildings and solar panel installations in the canton of Bern, Switzerland. The project includes data filtering capabilities, interactive mapping, and geospatial visualization features for understanding the distribution and characteristics of solar energy infrastructure.
+Un progetto di computer vision per il rilevamento automatico di pannelli solari attraverso l'analisi di ortofoto aeree nel cantone di Berna, Svizzera. Il sistema utilizza dati open data di swisstopo e opendata.swiss per creare un dataset bilanciato di immagini aeree ad alta risoluzione per l'addestramento di modelli di machine learning.
 
-## Main Features
+## Problema
 
-### 🔍 Data Filtering
+Identificare automaticamente gli edifici dotati di pannelli solari attraverso l'analisi di fotografie aeree ad alta risoluzione (ortofoto).
 
-- **`filter-bern-solar.py`**: Filters electricity production plants for the canton of Bern (BE) specifically for solar panels (SubCategory 'subcat_2')
-- **`filter_bern_buildings.py`**: Filters all buildings in the canton of Bern from the main dataset
+## Processo di Sviluppo
 
-### 🗺️ Interactive Mapping
+1. **Estrazione Dati**: Ottenimento dei dati da opendata.swiss sui pannelli solari e edifici nel cantone di Berna
+2. **Estrazione Coordinate**: Matching spaziale tra edifici con pannelli solari e coordinate geografiche
+3. **Acquisizione Ortofoto**: Download automatico di ortofoto ad alta risoluzione da swisstopo WMS
+4. **Creazione Dataset**: Costruzione di un dataset bilanciato con rapporto ~1:3 tra esempi positivi e negativi
 
-- **`folium_map.py`**: Creates interactive HTML maps using Folium with:
-  - Support for Swiss LV95 coordinates (EPSG:2056)
-  - Automatic conversion to WGS84 coordinates for web visualization
-  - Detailed informative popups for each point
-  - Multiple layers (OpenStreetMap, Esri Satellite)
-  - Interactive layer control
+## Pipeline del Progetto
 
-### 📊 Geospatial Visualization
+### 🏗️ Preprocessing dei Dati
 
-- **`plotmap.py`**: Generates static visualizations on satellite basemaps with:
-  - Support for scatter and hexbin plots
-  - Integration with swisstopo data for cantonal boundaries
-  - High-resolution satellite basemap
-  - PNG format export
+- **`sample.py`**: Campionamento casuale di 24.000 edifici dal dataset completo del cantone di Berna
+- **`match.py`**: Matching spaziale tra edifici con pannelli solari e coordinate geografiche per identificare esempi positivi
+- **`orthophoto.py`**: Download di ortofoto per edifici con pannelli solari (esempi positivi)
+- **`original-orthophoto.py`**: Download di ortofoto per edifici casuali (esempi negativi/non etichettati)
 
-## Data Structure
+### 🖼️ Acquisizione Immagini
 
-### Core Datasets
+- **Risoluzione**: Immagini disponibili in due formati (125x125px e 256x256px)
+- **Risoluzione spaziale**: 20 cm per pixel
+- **Fonte**: Servizio WMS swisstopo (ch.swisstopo.swissimage-product)
+- **Sistema di coordinate**: LV95 (EPSG:2056)
 
-The project works with three main datasets:
+### 🗺️ Visualizzazione e Analisi
 
-1. **All Buildings in Bern**: Complete dataset of all buildings in the canton of Bern
-2. **Buildings with Solar Panels**: Specific subset of buildings that have solar panel installations
-3. **Geo-Coordinate Matching Dataset**: Provides coordinate matching and spatial relationships between the building and solar panel datasets
+- **`folium_map.py`**: Creazione di mappe interattive HTML con:
+  - Supporto per coordinate Swiss LV95 (EPSG:2056)
+  - Conversione automatica a WGS84 per visualizzazione web
+  - Popup informativi dettagliati
+  - Layer multipli (OpenStreetMap, Esri Satellite)
 
-### Directory `electricity/`
+- **`plotmap.py`**: Visualizzazioni statiche su basemap satellitari:
+  - Plot scatter e hexbin
+  - Integrazione con dati swisstopo per confini cantonali
+  - Esportazione in formato PNG ad alta risoluzione
 
-Contains the original electricity production plant datasets:
+## Struttura del Dataset
 
-- `ElectricityProductionPlant.csv`: Main dataset with all plants
-- `MainCategoryCatalogue.csv`: Main categories catalog
-- `PlantCategoryCatalogue.csv`: Plant categories catalog
-- `SubCategoryCatalogue.csv`: Subcategories catalog
-- `OrientationCatalogue.csv`: Orientation catalog
-- `PlantDetail.csv`: Additional plant details
+### Dataset Immagini
 
-### Directory `dataset/`
+Il progetto genera quattro directory di immagini per il training di modelli di computer vision:
 
-Filtered and processed datasets ready for analysis:
+#### Esempi Positivi (Edifici con Pannelli Solari)
+- **`true-orthophoto-125px/`**: 8.346 immagini 125x125px di edifici con pannelli solari
+- **`true-orthophoto-256px/`**: 8.346 immagini 256x256px di edifici con pannelli solari
 
-- `BernSolarPanelBuildings.csv`: Buildings with solar panels in the canton of Bern
-- `BernBuildings.csv`: All buildings in the canton of Bern
-- Geo-coordinate matching files for spatial analysis
+#### Esempi Negativi/Non Etichettati
+- **`unlabeled-orthophoto-125px/`**: 23.995 immagini 125x125px di edifici casuali
+- **`unlabeled-orthophoto-256px/`**: 19.583 immagini 256x256px di edifici casuali
 
-### Directory `data/`
+**Rapporto del Dataset**: ~1:3 (positivi:negativi), bilanciamento ottimale per training di modelli di classificazione
 
-Supplementary data on Bern buildings:
+### Dataset CSV
 
-- GeoJSON files for buildings and entrances
-- SQLite database with integrated data
-- Specifications and documentation in PDF format
+#### Directory `dataset/`
 
-### Directory `maps/` and `images/`
+- **`BernSolarPanelBuildings.csv`**: 37.099 edifici con pannelli solari nel cantone di Berna
+  - Include coordinate LV95, indirizzo, potenza installata, data di messa in funzione
+- **`buildings_BE.csv`**: 477.847 edifici totali nel cantone di Berna
+- **`building_sample_BE.csv`**: 24.000 edifici campionati casualmente per esempi negativi
+- **`buildings_BE_matches_xy.csv`**: 8.347 coordinate di edifici con pannelli solari estratte per il download delle ortofoto
 
-- `maps/`: Generated interactive HTML maps
-- `images/`: Static PNG visualizations
+## Caratteristiche Tecniche
 
-## Requirements
+### Coordinate e Proiezioni
+- **Input**: Swiss LV95 (EPSG:2056) - sistema di coordinate ufficiale svizzero
+- **Output web**: WGS84 (EPSG:4326) - conversione automatica per visualizzazione
+- **Basemap**: Web Mercator (EPSG:3857) - per integrazione con mappe satellitari
 
-```bash
-pip install pandas pyproj folium geopandas matplotlib contextily owslib
-```
+### Parametri Ortofoto
+- **Risoluzione spaziale**: 20 cm/pixel
+- **Dimensioni immagine**: 125x125px (25m x 25m) o 256x256px (51.2m x 51.2m)
+- **Formato**: PNG ad alta qualità
+- **Copertura**: Area di 12.5m di raggio dal centroide dell'edificio
 
-## Usage
+### API e Servizi
+- **Fonte dati**: opendata.swiss per dati energia e edifici
+- **Ortofoto**: swisstopo WMS (ch.swisstopo.swissimage-product)
+- **Confini amministrativi**: swisstopo WFS per confini cantonali
 
-### Data Filtering
+## Utilizzo
 
-```bash
-# Filter solar panels in the canton of Bern
-python filter-bern-solar.py
-
-# Filter all buildings in the canton of Bern
-python filter_bern_buildings.py
-```
-
-### Creating Interactive Maps
-
-```bash
-# Base map with default dataset
-python folium_map.py
-
-# Map of all buildings
-python folium_map.py --csv dataset/BernBuildings.csv --out maps/all_buildings.html --limit 5000
-
-# Map of solar panel buildings
-python folium_map.py --csv dataset/BernSolarPanelBuildings.csv --out maps/solar_buildings.html --limit 1000
-```
-
-### Static Visualizations
+### Preparazione del Dataset
 
 ```bash
-# Hexbin plot of solar panel buildings
-python plotmap.py --csv dataset/BernSolarPanelBuildings.csv --x _x --y _y --out solar_hexbin.png --kind hexbin --gridsize 120
+# 1. Campionamento di edifici casuali
+python sample.py
 
-# Scatter plot of all buildings
-python plotmap.py --csv dataset/BernBuildings.csv --x east_lv95 --y north_lv95 --out buildings_scatter.png --kind scatter --s 0.5
+# 2. Estrazione coordinate edifici con pannelli solari
+python match.py
+
+# 3. Download ortofoto edifici con pannelli (esempi positivi)
+python orthophoto.py
+
+# 4. Download ortofoto edifici casuali (esempi negativi)
+python original-orthophoto.py
 ```
 
-## Data Analysis Capabilities
-
-The project enables comprehensive analysis of:
-
-- **Building Distribution**: Spatial patterns of all buildings across Bern canton
-- **Solar Panel Adoption**: Geographic distribution and density of solar installations
-- **Spatial Relationships**: Correlation between building characteristics and solar panel presence
-- **Coordinate Matching**: Precise geographic alignment between building and energy datasets
-
-## Coordinate Systems
-
-The project primarily uses the Swiss coordinate system:
-
-- **LV95 (EPSG:2056)**: Official Swiss coordinate system for input data
-- **WGS84 (EPSG:4326)**: Automatic conversion for web visualization
-- **Web Mercator (EPSG:3857)**: For satellite basemaps
-
-## Output
-
-- **Interactive HTML maps**: Web-ready visualization with layer controls for building and solar data
-- **PNG images**: High-resolution static visualizations comparing building vs. solar distributions
-- **CSV datasets**: Filtered data with coordinate matching for spatial analysis
-- **Comparative visualizations**: Side-by-side analysis of building density vs. solar adoption
-
-## Technical Notes
-
-- Automatic handling of coordinate columns with different naming formats
-- Support for data sampling for large datasets
-- Integration with swisstopo WFS services for administrative boundaries
-- Dynamic informative popups with all available dataset fields
-- Coordinate matching capabilities for spatial relationship analysis
-- Optimized visualization for datasets of varying sizes (all buildings vs. solar-specific)# Bern Solar Panel Analysis
-
-A comprehensive project for analyzing buildings and solar panel installations in the canton of Bern, Switzerland. The project includes data filtering capabilities, interactive mapping, and geospatial visualization features for understanding the distribution and characteristics of solar energy infrastructure.
-
-## Main Features
-
-### 🔍 Data Filtering
-
-- **`filter-bern-solar.py`**: Filters electricity production plants for the canton of Bern (BE) specifically for solar panels (SubCategory 'subcat_2')
-- **`filter_bern_buildings.py`**: Filters all buildings in the canton of Bern from the main dataset
-
-### 🗺️ Interactive Mapping
-
-- **`folium_map.py`**: Creates interactive HTML maps using Folium with:
-  - Support for Swiss LV95 coordinates (EPSG:2056)
-  - Automatic conversion to WGS84 coordinates for web visualization
-  - Detailed informative popups for each point
-  - Multiple layers (OpenStreetMap, Esri Satellite)
-  - Interactive layer control
-
-### 📊 Geospatial Visualization
-
-- **`plotmap.py`**: Generates static visualizations on satellite basemaps with:
-  - Support for scatter and hexbin plots
-  - Integration with swisstopo data for cantonal boundaries
-  - High-resolution satellite basemap
-  - PNG format export
-
-## Data Structure
-
-### Core Datasets
-
-The project works with three main datasets:
-
-1. **All Buildings in Bern**: Complete dataset of all buildings in the canton of Bern
-2. **Buildings with Solar Panels**: Specific subset of buildings that have solar panel installations
-3. **Geo-Coordinate Matching Dataset**: Provides coordinate matching and spatial relationships between the building and solar panel datasets
-
-### Directory `electricity/`
-
-Contains the original electricity production plant datasets:
-
-- `ElectricityProductionPlant.csv`: Main dataset with all plants
-- `MainCategoryCatalogue.csv`: Main categories catalog
-- `PlantCategoryCatalogue.csv`: Plant categories catalog
-- `SubCategoryCatalogue.csv`: Subcategories catalog
-- `OrientationCatalogue.csv`: Orientation catalog
-- `PlantDetail.csv`: Additional plant details
-
-### Directory `dataset/`
-
-Filtered and processed datasets ready for analysis:
-
-- `BernSolarPanelBuildings.csv`: Buildings with solar panels in the canton of Bern
-- `BernBuildings.csv`: All buildings in the canton of Bern
-- Geo-coordinate matching files for spatial analysis
-
-### Directory `data/`
-
-Supplementary data on Bern buildings:
-
-- GeoJSON files for buildings and entrances
-- SQLite database with integrated data
-- Specifications and documentation in PDF format
-
-### Directory `maps/` and `images/`
-
-- `maps/`: Generated interactive HTML maps
-- `images/`: Static PNG visualizations
-
-## Requirements
+### Generazione delle Visualizzazioni
 
 ```bash
-pip install pandas pyproj folium geopandas matplotlib contextily owslib
+# Mappa interattiva di tutti gli edifici con pannelli solari
+python folium_map.py --csv dataset/BernSolarPanelBuildings.csv --out maps/solar_buildings.html
+
+# Visualizzazione hexbin della densità di pannelli solari
+python plotmap.py --csv dataset/BernSolarPanelBuildings.csv --x _x --y _y --out images/solar_hexbin.png --kind hexbin --gridsize 120
+
+# Scatter plot di tutti gli edifici
+python plotmap.py --csv dataset/buildings_BE.csv --x GKODE --y GKODN --out images/buildings_scatter.png --kind scatter --s 0.5
 ```
 
-## Usage
-
-### Data Filtering
+## Requisiti
 
 ```bash
-# Filter solar panels in the canton of Bern
-python filter-bern-solar.py
-
-# Filter all buildings in the canton of Bern
-python filter_bern_buildings.py
+pip install pandas pyproj folium geopandas matplotlib contextily owslib requests
 ```
 
-### Creating Interactive Maps
+## Applicazioni Potenziali
 
-```bash
-# Base map with default dataset
-python folium_map.py
+### Machine Learning
+- **Classificazione binaria**: Rilevamento presenza/assenza pannelli solari
+- **Object detection**: Localizzazione precisa dei pannelli nelle immagini
+- **Semantic segmentation**: Segmentazione pixel-level dei pannelli solari
+- **Transfer learning**: Fine-tuning di modelli pre-addestrati (ResNet, EfficientNet, etc.)
 
-# Map of all buildings
-python folium_map.py --csv dataset/BernBuildings.csv --out maps/all_buildings.html --limit 5000
+### Analisi Geospaziale
+- **Mapping**: Identificazione automatica di nuove installazioni solari
+- **Trend analysis**: Monitoraggio dell'espansione del fotovoltaico nel tempo
+- **Urban planning**: Supporto alla pianificazione energetica territoriale
+- **Policy making**: Analisi dell'efficacia delle politiche di incentivazione
 
-# Map of solar panel buildings
-python folium_map.py --csv dataset/BernSolarPanelBuildings.csv --out maps/solar_buildings.html --limit 1000
+### Computer Vision Research
+- **Benchmark dataset**: Dataset standardizzato per confronto di algoritmi
+- **Domain adaptation**: Trasferimento a altre regioni geografiche
+- **Multi-temporal analysis**: Rilevamento di cambiamenti nel tempo
+- **Multi-scale analysis**: Confronto prestazioni a diverse risoluzioni
+
+## Note Tecniche
+
+- **Gestione memoria**: Download progressivo per dataset di grandi dimensioni
+- **Error handling**: Gestione automatica di fallimenti di download WMS
+- **Coordinate handling**: Supporto automatico per diversi formati di colonne coordinate
+- **Scalabilità**: Pipeline ottimizzata per dataset di centinaia di migliaia di edifici
+- **Qualità**: Controllo qualità automatico delle immagini scaricate
+- **Reproducibilità**: Seed fisso per campionamento deterministico
+
+## Struttura Directory
+
+```
+bern-solar-panel-detection/
+├── dataset/                          # Dataset CSV processati
+│   ├── BernSolarPanelBuildings.csv   # 37.099 edifici con pannelli
+│   ├── buildings_BE.csv              # 477.847 edifici totali BE
+│   ├── building_sample_BE.csv        # 24.000 edifici campionati
+│   └── buildings_BE_matches_xy.csv   # 8.347 coordinate estratte
+├── true-orthophoto-125px/            # 8.346 immagini positive 125px
+├── true-orthophoto-256px/            # 8.346 immagini positive 256px
+├── unlabeled-orthophoto-125px/       # 23.995 immagini negative 125px
+├── unlabeled-orthophoto-256px/       # 19.583 immagini negative 256px
+├── maps/                             # Mappe HTML interattive
+├── images/                           # Visualizzazioni statiche PNG
+└── *.py                             # Script di preprocessing e visualizzazione
 ```
 
-### Static Visualizations
+## Licenza e Attribuzioni
 
-```bash
-# Hexbin plot of solar panel buildings
-python plotmap.py --csv dataset/BernSolarPanelBuildings.csv --x _x --y _y --out solar_hexbin.png --kind hexbin --gridsize 120
-
-# Scatter plot of all buildings
-python plotmap.py --csv dataset/BernBuildings.csv --x east_lv95 --y north_lv95 --out buildings_scatter.png --kind scatter --s 0.5
-```
-
-## Data Analysis Capabilities
-
-The project enables comprehensive analysis of:
-
-- **Building Distribution**: Spatial patterns of all buildings across Bern canton
-- **Solar Panel Adoption**: Geographic distribution and density of solar installations
-- **Spatial Relationships**: Correlation between building characteristics and solar panel presence
-- **Coordinate Matching**: Precise geographic alignment between building and energy datasets
-
-## Coordinate Systems
-
-The project primarily uses the Swiss coordinate system:
-
-- **LV95 (EPSG:2056)**: Official Swiss coordinate system for input data
-- **WGS84 (EPSG:4326)**: Automatic conversion for web visualization
-- **Web Mercator (EPSG:3857)**: For satellite basemaps
-
-## Output
-
-- **Interactive HTML maps**: Web-ready visualization with layer controls for building and solar data
-- **PNG images**: High-resolution static visualizations comparing building vs. solar distributions
-- **CSV datasets**: Filtered data with coordinate matching for spatial analysis
-- **Comparative visualizations**: Side-by-side analysis of building density vs. solar adoption
-
-## Technical Notes
-
-- Automatic handling of coordinate columns with different naming formats
-- Support for data sampling for large datasets
-- Integration with swisstopo WFS services for administrative boundaries
-- Dynamic informative popups with all available dataset fields
-- Coordinate matching capabilities for spatial relationship analysis
-- Optimized visualization for datasets of varying sizes (all buildings vs. solar-specific)
+- **Dati**: opendata.swiss (Open Government Data)
+- **Ortofoto**: © swisstopo
+- **Confini amministrativi**: © swisstopo
+- **Codice**: Sviluppato per ricerca accademica in computer vision e energy analytics
