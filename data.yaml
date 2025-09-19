@@ -1,0 +1,4 @@
+train: /Users/lucavisconti/Bern/bern-solar-panel-detection/true-orthophoto-256px
+val: /Users/lucavisconti/Bern/bern-solar-panel-detection/unlabeled-orthophoto-256px
+nc: 2
+names: [ 'solar-panel', 'no-solar-panel' ]
